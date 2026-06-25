@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-logo">✦</div>
+    <span class="brand-name">TaskFlow</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Menu</div>
+    <button class="nav-item active" id="nav-tasks" onclick="showPage('tasks')">
+      <span class="nav-icon">✓</span> Tasks
+    </button>
+    <button class="nav-item" id="nav-projects" onclick="showPage('projects')">
+      <span class="nav-icon">◈</span> Projects
+    </button>
+    <button class="nav-item" id="nav-profile" onclick="showPage('profile')">
+      <span class="nav-icon">⊙</span> Profile
+    </button>
+
+    <div class="nav-section-label" style="margin-top:16px">Projects</div>
+    <div id="projectsNav"></div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-info" onclick="showPage('profile')">
+      <div class="user-avatar" id="sidebarAvatar">?</div>
+      <div>
+        <div class="user-name" id="sidebarName">Loading…</div>
+        <div class="user-email" id="sidebarEmail"></div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="logout()">Sign Out</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <h1 class="page-title" id="pageTitle">Tasks</h1>
+    </div>
+    <div class="topbar-actions">
+      <div class="search-box" id="searchBox">
+        <span>🔍</span>
+        <input type="text" id="searchInput" placeholder="Search tasks…" oninput="onSearch()" />
+      </div>
+      <button class="btn-new" id="newBtn" onclick="openTaskModal()">+ New Task</button>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- TASKS PAGE -->
+    <div id="page-tasks">
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="filters-row">
+        <select class="filter-select" id="filterStatus" onchange="loadTasks()">
+          <option value="">All Status</option>
+          <option value="todo">To Do</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+        <select class="filter-select" id="filterPriority" onchange="loadTasks()">
+          <option value="">All Priority</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <select class="filter-select" id="filterProject" onchange="loadTasks()">
+          <option value="">All Projects</option>
+        </select>
+      </div>
+      <div class="tasks-list" id="tasksList"></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- PROJECTS PAGE -->
+    <div id="page-projects" class="hidden">
+      <div class="stats-grid" id="projectStatsGrid"></div>
+      <div class="filters-row" id="projectFiltersRow">
+        <div class="search-box" style="min-width:200px">
+          <span>🔍</span>
+          <input type="text" id="projectSearchInput" placeholder="Search projects…" oninput="onProjectSearch()" />
+        </div>
+        <select class="filter-select" id="filterProjectStatus" onchange="loadProjectsPage()">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
+      <div class="tasks-list" id="projectsList"></div>
+      <div class="pagination" id="projectPagination"></div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div id="page-profile" class="hidden">
+      <div class="profile-grid">
+        <div class="profile-card">
+          <div class="profile-avatar" id="profileAvatar">?</div>
+          <div class="profile-name" id="profileName">—</div>
+          <div class="profile-email" id="profileEmail">—</div>
+          <div class="profile-since" id="profileSince"></div>
+        </div>
+        <div>
+          <div class="info-card" style="margin-bottom:16px">
+            <div class="info-card-title">Statistics</div>
+            <div class="info-row"><span class="info-label">Total Tasks</span><span class="info-value" id="statTotal">—</span></div>
+            <div class="info-row"><span class="info-label">Completed</span><span class="info-value" id="statCompleted">—</span></div>
+            <div class="info-row"><span class="info-label">Projects</span><span class="info-value" id="statProjects">—</span></div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">Preferences</div>
+            <div class="info-row">
+              <span class="info-label">Theme</span>
+              <div class="theme-toggle">
+                <button class="theme-btn" id="themeDark" onclick="setTheme('dark')">Dark</button>
+                <button class="theme-btn" id="themeLight" onclick="setTheme('light')">Light</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- TASK MODAL -->
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalTitle">New Task</h2>
+      <button class="close-btn" onclick="closeModal('taskModal')">×</button>
+    </div>
+    <div class="modal-form">
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" id="taskTitle" placeholder="What needs to be done?" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="taskDesc" placeholder="Add details…"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select id="taskStatus">
+            <option value="todo">To Do</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="taskPriority">
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" id="taskDue" />
+        </div>
+        <div class="form-group">
+          <label>Project</label>
+          <select id="taskProject">
+            <option value="">No Project</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('taskModal')">Cancel</button>
+        <button class="btn-primary" id="saveTaskBtn" onclick="saveTask()">Save Task</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT MODAL -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="projectModalTitle">New Project</h2>
+      <button class="close-btn" onclick="closeModal('projectModal')">×</button>
+    </div>
+    <div class="modal-form">
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" id="projectName" placeholder="Project name" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="projectDesc" placeholder="What is this project about?"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Color</label>
+          <input type="color" id="projectColor" value="#7c6bff" style="height:40px;cursor:pointer" />
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="projectStatus">
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('projectModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveProject()">Save Project</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="../js/api.js"></script>
+<script>
+// ── Auth guard ──────────────────────────────────────────────
+if (!localStorage.getItem('tf_token')) window.location.href = 'auth.html';
+
+// ── State ───────────────────────────────────────────────────
+let currentPage = 1;
+let searchTimeout = null;
+let editingTaskId = null;
+let editingProjectId = null;
+let projects = [];
+let currentView = 'tasks';
+
+// ── Init ────────────────────────────────────────────────────
+(async function init() {
+  loadUserFromStorage();
+  applyTheme(localStorage.getItem('tf_theme') || 'light');
+  await Promise.all([loadProjects(), loadProfile()]);
+  loadTasks();
+})();
+
+function loadUserFromStorage() {
+  const u = JSON.parse(localStorage.getItem('tf_user') || '{}');
+  if (u.name) {
+    document.getElementById('sidebarName').textContent = u.name;
+    document.getElementById('sidebarEmail').textContent = u.email || '';
+    document.getElementById('sidebarAvatar').textContent = u.name[0].toUpperCase();
+  }
+}
+
+// ── Navigation ──────────────────────────────────────────────
+function showPage(page) {
+  currentView = page;
+  ['tasks', 'projects', 'profile'].forEach(p => {
+    document.getElementById(`page-${p}`).classList.toggle('hidden', p !== page);
+    document.getElementById(`nav-${p}`).classList.toggle('active', p === page);
+  });
+
+  const titles = { tasks: 'Tasks', projects: 'Projects', profile: 'Profile' };
+  document.getElementById('pageTitle').textContent = titles[page];
+  document.getElementById('searchBox').style.display = page === 'tasks' ? 'flex' : 'none';
+  document.getElementById('newBtn').style.display = page === 'profile' ? 'none' : 'flex';
+  document.getElementById('newBtn').textContent = page === 'projects' ? '+ New Project' : '+ New Task';
+  document.getElementById('newBtn').onclick = page === 'projects' ? openProjectModal : openTaskModal;
+
+  if (page === 'projects') loadProjectsPage();
+  if (page === 'profile') loadProfile();
+  closeSidebar();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+// ── Tasks ───────────────────────────────────────────────────
+async function loadTasks() {
+  const search = document.getElementById('searchInput').value.trim();
+  const status = document.getElementById('filterStatus').value;
+  const priority = document.getElementById('filterPriority').value;
+  const project = document.getElementById('filterProject').value;
+
+  // Save filters to localStorage
+  localStorage.setItem('tf_filters', JSON.stringify({ search, status, priority, project }));
+
+  const params = { page: currentPage, limit: 10 };
+  if (search) params.search = search;
+  if (status) params.status = status;
+  if (priority) params.priority = priority;
+  if (project) params.project = project;
+
+  try {
+    const data = await api.getTasks(params);
+    renderTasks(data.tasks);
+    renderPagination(data.pagination);
+    renderStats(data.pagination.total);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function renderTasks(tasks) {
+  const list = document.getElementById('tasksList');
+  if (!tasks.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">No tasks yet</div>
+      <div class="empty-desc">Create your first task to get started</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = tasks.map(t => {
+    const isDone = t.status === 'completed';
+    const dueClass = t.dueDate && new Date(t.dueDate) < new Date() && !isDone ? 'overdue' : '';
+    const dueText = t.dueDate ? formatDate(t.dueDate) : '';
+    return `
+    <div class="task-card">
+      <div class="task-check ${isDone ? 'done' : ''}" onclick="toggleTask('${t._id}', '${t.status}')">
+        ${isDone ? '✓' : ''}
+      </div>
+      <div class="task-content">
+        <div class="task-title ${isDone ? 'done-text' : ''}">${escHtml(t.title)}</div>
+        <div class="task-meta">
+          <span class="badge badge-priority-${t.priority}">${t.priority}</span>
+          ${t.status !== 'todo' ? `<span class="badge badge-status">${t.status.replace('_',' ')}</span>` : ''}
+          ${t.project ? `<span class="badge badge-project">◈ ${escHtml(t.project.name)}</span>` : ''}
+          ${dueText ? `<span class="task-due ${dueClass}">📅 ${dueText}</span>` : ''}
+        </div>
+      </div>
+      <div class="task-actions">
+        <button class="icon-btn" onclick="editTask(${JSON.stringify(t).replace(/"/g,'&quot;')})" title="Edit">✎</button>
+        <button class="icon-btn delete" onclick="deleteTask('${t._id}')" title="Delete">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderStats(total) {
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Tasks</div><div class="stat-value">${total}</div></div>
+  `;
+}
+
+function renderPagination(p) {
+  const el = document.getElementById('pagination');
+  if (p.totalPages <= 1) { el.innerHTML = ''; return; }
+
+  let html = `<button class="page-btn" onclick="goPage(${p.page-1})" ${p.page<=1?'disabled':''}>‹</button>`;
+  for (let i = 1; i <= p.totalPages; i++) {
+    html += `<button class="page-btn ${i===p.page?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  html += `<button class="page-btn" onclick="goPage(${p.page+1})" ${p.page>=p.totalPages?'disabled':''}>›</button>`;
+  el.innerHTML = html;
+}
+
+function goPage(p) { currentPage = p; loadTasks(); }
+
+function onSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => { currentPage = 1; loadTasks(); }, 300);
+}
+
+async function toggleTask(id, status) {
+  const newStatus = status === 'completed' ? 'todo' : 'completed';
+  try {
+    await api.updateTask(id, { status: newStatus });
+    loadTasks();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function deleteTask(id) {
+  if (!confirm('Delete this task?')) return;
+  try {
+    await api.deleteTask(id);
+    showToast('Task deleted', 'success');
+    loadTasks();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+// ── Task Modal ──────────────────────────────────────────────
+function openTaskModal() {
+  editingTaskId = null;
+  document.getElementById('modalTitle').textContent = 'New Task';
+  document.getElementById('taskTitle').value = '';
+  document.getElementById('taskDesc').value = '';
+  document.getElementById('taskStatus').value = 'todo';
+  document.getElementById('taskPriority').value = 'medium';
+  document.getElementById('taskDue').value = '';
+  document.getElementById('taskProject').value = '';
+  document.getElementById('taskModal').classList.add('open');
+}
+
+function editTask(t) {
+  editingTaskId = t._id;
+  document.getElementById('modalTitle').textContent = 'Edit Task';
+  document.getElementById('taskTitle').value = t.title;
+  document.getElementById('taskDesc').value = t.description || '';
+  document.getElementById('taskStatus').value = t.status;
+  document.getElementById('taskPriority').value = t.priority;
+  document.getElementById('taskDue').value = t.dueDate ? t.dueDate.split('T')[0] : '';
+  document.getElementById('taskProject').value = t.project?._id || t.project || '';
+  document.getElementById('taskModal').classList.add('open');
+}
+
+async function saveTask() {
+  const title = document.getElementById('taskTitle').value.trim();
+  if (!title) { showToast('Title is required', 'error'); return; }
+
+  const body = {
+    title,
+    description: document.getElementById('taskDesc').value.trim(),
+    status: document.getElementById('taskStatus').value,
+    priority: document.getElementById('taskPriority').value,
+    dueDate: document.getElementById('taskDue').value || null,
+    project: document.getElementById('taskProject').value || null,
+  };
+
+  const btn = document.getElementById('saveTaskBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    if (editingTaskId) {
+      await api.updateTask(editingTaskId, body);
+      showToast('Task updated', 'success');
+    } else {
+      await api.createTask(body);
+      showToast('Task created', 'success');
+    }
+    closeModal('taskModal');
+    loadTasks();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Task';
+  }
+}
+
+// ── Projects ────────────────────────────────────────────────
+async function loadProjects() {
+  try {
+    const data = await api.getProjects({ limit: 200 });
+    projects = data.projects;
+    renderProjectsNav();
+    renderProjectDropdowns();
+  } catch (err) {}
+}
+
+let projectPage = 1;
+let projectSearchTimeout = null;
+
+function onProjectSearch() {
+  clearTimeout(projectSearchTimeout);
+  projectSearchTimeout = setTimeout(() => { projectPage = 1; loadProjectsPage(); }, 300);
+}
+
+function renderProjectsNav() {
+  document.getElementById('projectsNav').innerHTML = projects.slice(0,8).map(p => `
+    <button class="nav-item" onclick="filterByProject('${p._id}')">
+      <span class="project-dot" style="background:${p.color}"></span>
+      ${escHtml(p.name)}
+    </button>
+  `).join('');
+}
+
+function renderProjectDropdowns() {
+  const opt = projects.map(p => `<option value="${p._id}">${escHtml(p.name)}</option>`).join('');
+  document.getElementById('filterProject').innerHTML = '<option value="">All Projects</option>' + opt;
+  document.getElementById('taskProject').innerHTML = '<option value="">No Project</option>' + opt;
+}
+
+function filterByProject(id) {
+  showPage('tasks');
+  document.getElementById('filterProject').value = id;
+  currentPage = 1;
+  loadTasks();
+}
+
+async function loadProjectsPage() {
+  const search = document.getElementById('projectSearchInput').value.trim();
+  const status = document.getElementById('filterProjectStatus').value;
+
+  const params = { page: projectPage, limit: 10 };
+  if (search) params.search = search;
+  if (status) params.status = status;
+
+  try {
+    const data = await api.getProjects(params);
+    const list = document.getElementById('projectsList');
+
+    // Update stats using total counts (load all for sidebar separately)
+    await loadProjects();
+    document.getElementById('projectStatsGrid').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total Projects</div><div class="stat-value">${projects.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value">${projects.filter(p=>p.status==='active').length}</div></div>
+      <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value">${projects.filter(p=>p.status==='completed').length}</div></div>
+    `;
+
+    if (!data.projects.length) {
+      list.innerHTML = `<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-title">No projects found</div><div class="empty-desc">Try changing your search or filters</div></div>`;
+      document.getElementById('projectPagination').innerHTML = '';
+      return;
+    }
+
+    list.innerHTML = data.projects.map(p => `
+      <div class="task-card">
+        <span class="project-dot" style="background:${p.color};width:14px;height:14px;border-radius:50%;flex-shrink:0"></span>
+        <div class="task-content">
+          <div class="task-title">${escHtml(p.name)}</div>
+          <div class="task-meta">
+            <span class="badge badge-status">${p.status}</span>
+            ${p.description ? `<span style="font-size:12px;color:var(--text-muted)">${escHtml(p.description.slice(0,60))}${p.description.length>60?'…':''}</span>` : ''}
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="icon-btn" onclick="editProject(${JSON.stringify(p).replace(/"/g,'&quot;')})" title="Edit">✎</button>
+          <button class="icon-btn delete" onclick="deleteProject('${p._id}')" title="Delete">✕</button>
+        </div>
+      </div>
+    `).join('');
+
+    // Render pagination
+    const pg = data.pagination;
+    const pEl = document.getElementById('projectPagination');
+    if (pg.totalPages <= 1) { pEl.innerHTML = ''; return; }
+    let html = `<button class="page-btn" onclick="goProjectPage(${pg.page-1})" ${pg.page<=1?'disabled':''}>‹</button>`;
+    for (let i = 1; i <= pg.totalPages; i++) {
+      html += `<button class="page-btn ${i===pg.page?'active':''}" onclick="goProjectPage(${i})">${i}</button>`;
+    }
+    html += `<button class="page-btn" onclick="goProjectPage(${pg.page+1})" ${pg.page>=pg.totalPages?'disabled':''}>›</button>`;
+    pEl.innerHTML = html;
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function goProjectPage(p) { projectPage = p; loadProjectsPage(); }
+
+function openProjectModal() {
+  editingProjectId = null;
+  document.getElementById('projectModalTitle').textContent = 'New Project';
+  document.getElementById('projectName').value = '';
+  document.getElementById('projectDesc').value = '';
+  document.getElementById('projectColor').value = '#7c6bff';
+  document.getElementById('projectStatus').value = 'active';
+  document.getElementById('projectModal').classList.add('open');
+}
+
+function editProject(p) {
+  editingProjectId = p._id;
+  document.getElementById('projectModalTitle').textContent = 'Edit Project';
+  document.getElementById('projectName').value = p.name;
+  document.getElementById('projectDesc').value = p.description || '';
+  document.getElementById('projectColor').value = p.color || '#7c6bff';
+  document.getElementById('projectStatus').value = p.status;
+  document.getElementById('projectModal').classList.add('open');
+}
+
+async function saveProject() {
+  const name = document.getElementById('projectName').value.trim();
+  if (!name) { showToast('Project name is required', 'error'); return; }
+
+  const body = {
+    name,
+    description: document.getElementById('projectDesc').value.trim(),
+    color: document.getElementById('projectColor').value,
+    status: document.getElementById('projectStatus').value,
+  };
+
+  try {
+    if (editingProjectId) {
+      await api.updateProject(editingProjectId, body);
+      showToast('Project updated', 'success');
+    } else {
+      await api.createProject(body);
+      showToast('Project created', 'success');
+    }
+    closeModal('projectModal');
+    loadProjectsPage();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function deleteProject(id) {
+  if (!confirm('Delete this project? Tasks will be unassigned.')) return;
+  try {
+    await api.deleteProject(id);
+    showToast('Project deleted', 'success');
+    loadProjectsPage();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+// ── Profile ─────────────────────────────────────────────────
+async function loadProfile() {
+  try {
+    const data = await api.getProfile();
+    const u = data.user;
+    const s = data.stats;
+
+    document.getElementById('profileAvatar').textContent = u.name[0].toUpperCase();
+    document.getElementById('profileName').textContent = u.name;
+    document.getElementById('profileEmail').textContent = u.email;
+    document.getElementById('profileSince').textContent = 'Member since ' + formatDate(u.createdAt);
+    document.getElementById('statTotal').textContent = s.taskCount;
+    document.getElementById('statCompleted').textContent = s.completedTasks;
+    document.getElementById('statProjects').textContent = s.projectCount;
+
+    document.getElementById('sidebarName').textContent = u.name;
+    document.getElementById('sidebarEmail').textContent = u.email;
+    document.getElementById('sidebarAvatar').textContent = u.name[0].toUpperCase();
+
+    const theme = u.preferences?.theme || 'light';
+    document.getElementById('themeDark').classList.toggle('active', theme === 'dark');
+    document.getElementById('themeLight').classList.toggle('active', theme === 'light');
+  } catch (err) {}
+}
+
+async function setTheme(theme) {
+  applyTheme(theme);
+  localStorage.setItem('tf_theme', theme);
+  document.getElementById('themeDark').classList.toggle('active', theme === 'dark');
+  document.getElementById('themeLight').classList.toggle('active', theme === 'light');
+  try { await api.updatePreferences({ theme }); } catch(e) {}
+}
+
+function applyTheme(theme) {
+  document.body.classList.toggle('light', theme === 'light');
+}
+
+// ── Helpers ─────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function logout() {
+  localStorage.removeItem('tf_token');
+  localStorage.removeItem('tf_user');
+  localStorage.removeItem('tf_filters');
+  window.location.href = 'auth.html';
+}
+
+function formatDate(d) {
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function showToast(msg, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// Restore filters from localStorage
+const saved = JSON.parse(localStorage.getItem('tf_filters') || '{}');
+if (saved.search) document.getElementById('searchInput').value = saved.search;
+if (saved.status) document.getElementById('filterStatus').value = saved.status;
+if (saved.priority) document.getElementById('filterPriority').value = saved.priority;
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
