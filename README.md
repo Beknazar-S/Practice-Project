@@ -250,7 +250,7 @@ GET /api/tasks?search=meeting&status=todo&priority=high&page=1&limit=10
 
 ## Deployment
 
-The application can be deployed to [Render](https://render.com):
+The application can be deployed to [Render](https://practice-project-99df.onrender.com):
 
 1. Push project to GitHub
 2. Create a new **Web Service** on Render
